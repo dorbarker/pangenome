@@ -29,8 +29,26 @@ def find_panseq():
     out, err = p.communicate()
 
     if out == '':
-        sys.stderr.write('Could not locate panseq.pl\n')
+        sys.stderr.write('FATAL: Could not locate panseq.pl\n')
         sys.exit(1)
     else:
         return out
+
+def find_requirements():
+
+    def which(name, parent_dir = True):
+        
+        try:
+            result = subprocess.check_output(['which', name]).strip()
+
+            return os.path.dirname(result) + '/' if parent_dir else result
+        
+        except subprocess.CalledProcessError:
+
+            sys.stderr.write('FATAL: Cannot locate {} in PATH\n'.format(name))
+            sys.exit(1)
+
+    _args = (('blastn',), ('mummer',), ('muscle', False))
+    
+    return {args[0]: which(*args) for args in _args}
 
