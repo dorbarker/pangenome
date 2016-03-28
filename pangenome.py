@@ -17,11 +17,19 @@ def arguments():
     parser.add_argument('--work-dir', help = 'Path to work directory \
                                       (default = one level up from fasta-dir)')
 
-    parser.add_argument('--word_size', type = int, default = 20,
+    parser.add_argument('--word-size', type = int, default = 20,
                         help = 'Word size for BLASTN (default = 20)')
+
+    parser.add_argument('--fragment-size', type = int, default = 500,
+                      help = 'Fragment size for Panseq marker classification')
+    
+    parser.add_argument('--percent-id', type = int, default = 85,
+                      help = 'Cutoff for nucleotide level homology')
 
     parser.add_argument('--cores', type = int, default = cpu_count(),
                         help = 'Number of CPU cores to use')
+    
+    
 
     return parser.parse_args()
 
@@ -60,11 +68,13 @@ def find_requirements():
 
     return {args[0]: which(*args) for args in _args}
 
-def format_settings(fasta_dir, work_dir, reqs, size, perc_id, word, cores):
+def format_settings(fasta_dir, work_dir, size, perc_id, word, cores):
     '''Perpares the settings file panseq takes as its only argument'''
 
     num_strains = sum(1 for x in os.listdir(fasta_dir) if '.f' in x)
     base_dir = os.path.join(work_dir, 'panseq_output/')
+
+    reqs = find_requirements()
 
     settings = (
         ('queryDirectory',         fasta_dir),
@@ -89,3 +99,22 @@ def format_settings(fasta_dir, work_dir, reqs, size, perc_id, word, cores):
         for line in settings:
             out.writerow(line)
 
+def run_panseq(work_dir):
+
+    panseq = find_panseq()
+
+    subprocess.call(panseq, os.path.join(work_dir, 'settings.txt'))
+
+def main():
+
+    args = arguments()
+
+    reqs = find_requirements()
+
+    format_settings(args.fasta_dir, args.work_dir, args.fragment_size,
+                    args.percent_id, args.word_size, args.cores)
+
+    run_panseq(args.work_dir)
+
+if __name__ == '__main__':
+    main()
